@@ -49,12 +49,12 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Prepare k8s manifest with new image (no apply)
+      - name: Prepare k8s manifest with new image
         run: |
           DIGEST='${{ steps.build.outputs.digest }}'
-          yq -i '.spec.template.spec.containers[0].image = "ghcr.io/${{ env.IMAGE_NAME }}@"+env(DIGEST)' k8s/deployment.yml
+          yq -i '.spec.template.spec.containers[0].image = "ghcr.io/${{ env.IMAGE_NAME }}@'"$DIGEST"'"' k8s/deployment.yml
 
-      - name: Dry-run deploy (kubectl diff)
+      - name: Dry-run deploy
         if: env.KUBECONFIG_B64 != ''
         env:
           KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}

@@ -1,0 +1,562 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>api: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">net-admin-api/cmd/api/main.go (0.0%)</option>
+				
+				<option value="file1">net-admin-api/internal/server/handle_health.go (100.0%)</option>
+				
+				<option value="file2">net-admin-api/internal/server/handle_vlans.go (80.3%)</option>
+				
+				<option value="file3">net-admin-api/internal/server/routes.go (88.2%)</option>
+				
+				<option value="file4">net-admin-api/internal/server/server.go (83.3%)</option>
+				
+				<option value="file5">net-admin-api/internal/vlan/model.go (100.0%)</option>
+				
+				<option value="file6">net-admin-api/internal/vlan/store.go (89.1%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "context"
+        "log"
+        "net/http"
+        "os"
+        "os/signal"
+        "strconv"
+        "syscall"
+        "time"
+
+        "net-admin-api/internal/server"
+)
+
+const DEFAULT_PORT            = 8080
+const DEFAULT_VLAN_STORE_PATH = "vlans.json"
+
+func main() <span class="cov0" title="0">{
+        port := DEFAULT_PORT
+        if portStr := os.Getenv("PORT"); portStr != "" </span><span class="cov0" title="0">{
+                var err error
+                port, err = strconv.Atoi(portStr)
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Fatalf("invalid API server port: %v", err)
+                }</span>
+        }
+
+        <span class="cov0" title="0">vlanStorePath := os.Getenv("VLAN_STORE_PATH")
+        if vlanStorePath == "" </span><span class="cov0" title="0">{
+                vlanStorePath = DEFAULT_VLAN_STORE_PATH
+        }</span>
+
+        <span class="cov0" title="0">server, err := server.NewServer(port, vlanStorePath)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("failed to create API server: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">shutdownDone := make(chan bool, 1)
+        go gracefulShutdown(server, shutdownDone)
+
+        err = server.ListenAndServe()
+        if err != nil &amp;&amp; err != http.ErrServerClosed </span><span class="cov0" title="0">{
+                log.Fatalf("API server error: %s", err)
+        }</span>
+        <span class="cov0" title="0">log.Printf("Started API server at %v", server.Addr)
+
+        &lt;-shutdownDone
+        log.Println("API server shutdown complete")</span>
+}
+
+func gracefulShutdown(apiServer *http.Server, done chan bool) <span class="cov0" title="0">{
+        // Create context that listens for the interrupt signal from the OS.
+        ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+        defer stop()
+
+        // Listen for the interrupt signal.
+        &lt;-ctx.Done()
+
+        log.Println("Shutting down gracefully, press Ctrl+C again to force")
+        stop() // Allow Ctrl+C to force shutdown by not diverting the signals any more
+
+        // Allow 5 seconds to finish ongoing requests
+        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+        defer cancel()
+        if err := apiServer.Shutdown(ctx); err != nil </span><span class="cov0" title="0">{
+                log.Printf("Server forced to shutdown with error: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">done &lt;- true</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package server
+
+import (
+        "fmt"
+        "net/http"
+)
+
+func (s *Server) HandleHealth(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        w.Header().Add("Cache-Control", "no-cache")
+        w.WriteHeader(http.StatusOK)
+        fmt.Fprintln(w, "OK")
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package server
+
+import (
+        "encoding/json"
+        "errors"
+        "fmt"
+        "log"
+        "net/http"
+        "strings"
+
+        "net-admin-api/internal/vlan"
+
+        "github.com/google/uuid"
+)
+
+func (s *Server) HandleListVLANs(respWriter http.ResponseWriter, req *http.Request) <span class="cov8" title="1">{
+        vlans, err := s.vlanStore.List()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("failed to read vlans: %v", err)
+                http.Error(respWriter, "failed to read vlans", http.StatusInternalServerError)
+                return
+        }</span>
+        <span class="cov8" title="1">writeJSONResponse(respWriter, vlans)</span>
+}
+
+func (s *Server) HandleCreateVLAN(respWriter http.ResponseWriter, req *http.Request) <span class="cov8" title="1">{
+        defer req.Body.Close()
+        vlan := &amp;vlan.VLAN{}
+        if err := json.NewDecoder(req.Body).Decode(&amp;vlan); err != nil </span><span class="cov8" title="1">{
+                http.Error(respWriter, fmt.Sprintf("failed to parse vlan: %v", err), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">if errors := vlan.Validate(); len(errors) &gt; 0 </span><span class="cov8" title="1">{
+                http.Error(respWriter, strings.Join(errors, ", "), http.StatusBadRequest)
+                return
+        }</span>
+
+        // Generate new ID and save
+        <span class="cov8" title="1">vlan.ID = uuid.New()
+        if err := s.vlanStore.Save(*vlan); err != nil </span><span class="cov0" title="0">{
+                log.Printf("failed to save vlan: %v", err)
+                http.Error(respWriter, "failed to save vlan", http.StatusInternalServerError)
+                return
+        }</span>
+
+        <span class="cov8" title="1">respWriter.Header().Set("Location", fmt.Sprintf("%s/%s", req.URL.RequestURI(), vlan.ID.String()))
+        respWriter.WriteHeader(http.StatusCreated)</span>
+}
+
+func (s *Server) HandleReadVLAN(respWriter http.ResponseWriter, req *http.Request) <span class="cov8" title="1">{
+        vlanID, err := uuid.Parse(req.PathValue("id"))
+        if err != nil </span><span class="cov8" title="1">{
+                http.Error(respWriter, "invalid vlan id", http.StatusBadRequest)
+                return
+        }</span>
+        <span class="cov8" title="1">vlan := s.vlanStore.Get(vlanID)
+        if vlan == nil </span><span class="cov8" title="1">{
+                http.NotFound(respWriter, req)
+                return
+        }</span>
+        <span class="cov8" title="1">writeJSONResponse(respWriter, vlan)</span>
+}
+
+func (s *Server) HandleUpdateVLAN(respWriter http.ResponseWriter, req *http.Request) <span class="cov8" title="1">{
+        vlanID, err := uuid.Parse(req.PathValue("id"))
+        if err != nil </span><span class="cov8" title="1">{
+                http.Error(respWriter, "invalid vlan id", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">defer req.Body.Close()
+        v := &amp;vlan.VLAN{}
+        if err := json.NewDecoder(req.Body).Decode(&amp;v); err != nil </span><span class="cov8" title="1">{
+                http.Error(respWriter, fmt.Sprintf("failed to parse vlan: %v", err), http.StatusBadRequest)
+                return
+        }</span>
+        <span class="cov8" title="1">if vlanID != v.ID </span><span class="cov8" title="1">{
+                http.Error(respWriter, "mismatching vlan id in request body", http.StatusBadRequest)
+                return
+        }</span>
+        <span class="cov8" title="1">if errors := v.Validate(); len(errors) &gt; 0 </span><span class="cov8" title="1">{
+                http.Error(respWriter, strings.Join(errors, ", "), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">if err := s.vlanStore.Update(*v); err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, vlan.ErrNotFound) </span><span class="cov8" title="1">{
+                        http.NotFound(respWriter, req)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">log.Printf("failed to update vlan: %v", err)
+                http.Error(respWriter, "failed to update vlan", http.StatusInternalServerError)
+                return</span>
+        }
+}
+
+func (s *Server) HandleDeleteVLAN(respWriter http.ResponseWriter, req *http.Request) <span class="cov8" title="1">{
+        vlanID, err := uuid.Parse(req.PathValue("id"))
+        if err != nil </span><span class="cov8" title="1">{
+                http.Error(respWriter, "invalid vlan id", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">if err := s.vlanStore.Delete(vlanID); err != nil </span><span class="cov8" title="1">{
+                if err == vlan.ErrNotFound </span><span class="cov8" title="1">{
+                        http.NotFound(respWriter, req)
+                        return
+                }</span>
+                <span class="cov0" title="0">log.Printf("failed to delete vlan: %v", err)
+                http.Error(respWriter, "failed to delete vlan", http.StatusInternalServerError)
+                return</span>
+        }
+}
+
+func writeJSONResponse(respWriter http.ResponseWriter, v any) <span class="cov8" title="1">{
+        respWriter.Header().Set("Content-Type", "application/json")
+        if err := json.NewEncoder(respWriter).Encode(v); err != nil </span><span class="cov0" title="0">{
+                log.Printf("failed to write response: %v", err)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package server
+
+import (
+        "net/http"
+)
+
+func (s *Server) RegisterRoutes() http.Handler <span class="cov8" title="1">{
+        mux := http.NewServeMux()
+
+        // vlans
+        mux.HandleFunc("GET    /api/v1/vlans",      s.HandleListVLANs)
+        mux.HandleFunc("POST   /api/v1/vlans",      s.HandleCreateVLAN)
+        mux.HandleFunc("GET    /api/v1/vlans/{id}", s.HandleReadVLAN)
+        mux.HandleFunc("PUT    /api/v1/vlans/{id}", s.HandleUpdateVLAN)
+        mux.HandleFunc("DELETE /api/v1/vlans/{id}", s.HandleDeleteVLAN)
+
+        // monitoring
+        mux.HandleFunc("GET /health", s.HandleHealth)
+
+        return s.corsMiddleware(mux)
+}</span>
+
+func (s *Server) corsMiddleware(next http.Handler) http.Handler <span class="cov8" title="1">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                // Set CORS headers
+                w.Header().Set("Access-Control-Allow-Origin", "*")
+                w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+                w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type")
+                w.Header().Set("Access-Control-Allow-Credentials", "false")
+
+                // Handle preflight OPTIONS requests
+                if r.Method == http.MethodOptions </span><span class="cov0" title="0">{
+                        w.WriteHeader(http.StatusNoContent)
+                        return
+                }</span>
+
+                // Proceed with the next handler
+                <span class="cov8" title="1">next.ServeHTTP(w, r)</span>
+        })
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package server
+
+import (
+        "fmt"
+        "net/http"
+        "time"
+
+        "net-admin-api/internal/vlan"
+)
+
+// Network Administration API server.
+type Server struct {
+        port      int
+        vlanStore *vlan.Store
+}
+
+func NewServer(port int, vlanStorePath string) (*http.Server, error) <span class="cov8" title="1">{
+        vlanStore, err := vlan.NewStore(vlanStorePath)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">server := &amp;Server{
+                port:      port,
+                vlanStore: vlanStore,
+        }
+
+        httpServer := &amp;http.Server{
+                Addr:         fmt.Sprintf(":%d", server.port),
+                Handler:      server.RegisterRoutes(),
+                IdleTimeout:  time.Minute,
+                ReadTimeout:  10 * time.Second,
+                WriteTimeout: 30 * time.Second,
+        }
+
+        return httpServer, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package vlan
+
+import (
+        "fmt"
+        "net/netip"
+
+        "github.com/google/uuid"
+)
+
+type VLAN struct {
+        ID      uuid.UUID    `json:"id"`
+        VID     uint16       `json:"vid"`
+        Name    string       `json:"name"`
+        Subnet  netip.Prefix `json:"subnet"`
+        Gateway netip.Addr   `json:"gateway"`
+        Status  string       `json:"status"`
+}
+
+func (v *VLAN) Validate() []string <span class="cov8" title="1">{
+        errors := make([]string, 0)
+        if v.VID &lt; 1 || v.VID &gt; 4094 </span><span class="cov8" title="1">{
+                errors = append(errors, fmt.Sprintf("invalid VLAN ID %v (expected range 1..4094)", v.VID))
+        }</span>
+        <span class="cov8" title="1">return errors</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package vlan
+
+import (
+        "encoding/json"
+        "errors"
+        "fmt"
+        "maps"
+        "os"
+        "slices"
+        "strings"
+        "sync"
+
+        "github.com/google/uuid"
+)
+
+var ErrNotFound = errors.New("not found")
+
+// Store manages a JSON file to persist VLANs.
+type Store struct {
+        path      string
+        vlansByID map[uuid.UUID]VLAN
+        mu        sync.RWMutex
+}
+
+func NewStore(path string) (*Store, error) <span class="cov8" title="1">{
+        store := &amp;Store{
+                path: path,
+        }
+
+        // store file does not exist
+        if _, err := os.Stat(path); os.IsNotExist(err) </span><span class="cov8" title="1">{
+                store.vlansByID = make(map[uuid.UUID]VLAN, 0)
+                store.writeVLANs()
+                return store, nil
+        }</span>
+
+        // store file exists
+        <span class="cov8" title="1">if err := store.readVLANs(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return store, nil</span>
+}
+
+func (s *Store) List() ([]VLAN, error) <span class="cov8" title="1">{
+        s.mu.RLock()
+        defer s.mu.RUnlock()
+        if len(s.vlansByID) == 0 </span><span class="cov8" title="1">{
+                return []VLAN{}, nil
+        }</span>
+        <span class="cov8" title="1">return slices.Collect(maps.Values(s.vlansByID)), nil</span>
+}
+
+func (s *Store) Get(id uuid.UUID) *VLAN <span class="cov8" title="1">{
+        s.mu.RLock()
+        defer s.mu.RUnlock()
+
+        if vlan, ok := s.vlansByID[id]; ok </span><span class="cov8" title="1">{
+                return &amp;vlan
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *Store) Save(vlan VLAN) error <span class="cov8" title="1">{
+        s.mu.Lock()
+        defer s.mu.Unlock()
+
+        s.vlansByID[vlan.ID] = vlan
+        return s.writeVLANs()
+}</span>
+
+func (s *Store) Update(vlan VLAN) error <span class="cov8" title="1">{
+        s.mu.Lock()
+        defer s.mu.Unlock()
+
+        if _, ok := s.vlansByID[vlan.ID]; !ok </span><span class="cov8" title="1">{
+                return ErrNotFound
+        }</span>
+
+        <span class="cov8" title="1">s.vlansByID[vlan.ID] = vlan
+        return s.writeVLANs()</span>
+}
+
+func (s *Store) Delete(id uuid.UUID) error <span class="cov8" title="1">{
+        s.mu.Lock()
+        defer s.mu.Unlock()
+
+        if _, ok := s.vlansByID[id]; !ok </span><span class="cov8" title="1">{
+                return ErrNotFound
+        }</span>
+
+        <span class="cov8" title="1">delete(s.vlansByID, id)
+        return s.writeVLANs()</span>
+}
+
+func (s *Store) readVLANs() error <span class="cov8" title="1">{
+        vlansFile, err := os.Open(s.path)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to open %v: %w", s.path, err)
+        }</span>
+
+        <span class="cov8" title="1">vlans := []VLAN{}
+        if err := json.NewDecoder(vlansFile).Decode(&amp;vlans); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to decode %v: %w", s.path, err)
+        }</span>
+
+        <span class="cov8" title="1">vlansByID := make(map[uuid.UUID]VLAN, len(vlans))
+        for _, vlan := range vlans </span><span class="cov8" title="1">{
+                if errors := vlan.Validate(); len(errors) &gt; 0 </span><span class="cov0" title="0">{
+                        return fmt.Errorf("invalid VLAN in %s: %s", s.path, strings.Join(errors, ", "))
+                }</span>
+                <span class="cov8" title="1">vlansByID[vlan.ID] = vlan</span>
+        }
+        <span class="cov8" title="1">s.vlansByID = vlansByID
+        return nil</span>
+}
+
+func (s *Store) writeVLANs() error <span class="cov8" title="1">{
+        vlansFile, err := os.Create(s.path)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to open %v: %w", s.path, err)
+        }</span>
+        <span class="cov8" title="1">defer vlansFile.Close()
+
+        vlans := slices.Collect(maps.Values(s.vlansByID))
+        if err := json.NewEncoder(vlansFile).Encode(vlans); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to encode %v: %w", s.path, err)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

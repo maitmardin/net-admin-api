@@ -28,6 +28,8 @@ without unit tests and mocking. A success scenario that covers all of the `api/v
 single test in `internal/server/handle_vlans_test.go`. And then there are separate tests to cover the error scenarios
 of each endpoint.
 
+Test coverage report can be seen [here](https://htmlpreview.github.io/?https://github.com/maitmardin/net-admin-api/blob/main/coverage.html).
+
 ## Misc Comments and Open Questions
 
 - Used UUID as the identifier for VLANs to guarantee uniqueness. Could VLAN ID (VID) be used as a unique identifier

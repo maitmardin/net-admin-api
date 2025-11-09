@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -116,15 +117,28 @@ func (s *Store) readVLANs() error {
 }
 
 func (s *Store) writeVLANs() error {
-	vlansFile, err := os.Create(s.path)
+	vlansFileDir := filepath.Dir(s.path)
+	vlansFileTmp, err := os.CreateTemp(vlansFileDir, "vlans-*.json")
 	if err != nil {
-		return fmt.Errorf("failed to open %v: %w", s.path, err)
+		return fmt.Errorf("failed to create temp file in %v: %w", vlansFileDir, err)
 	}
-	defer vlansFile.Close()
+	defer func() {
+		_ = os.Remove(vlansFileTmp.Name())
+	}()
 
 	vlans := slices.Collect(maps.Values(s.vlansByID))
-	if err := json.NewEncoder(vlansFile).Encode(vlans); err != nil {
+	if err := json.NewEncoder(vlansFileTmp).Encode(vlans); err != nil {
+		_ = vlansFileTmp.Close()
 		return fmt.Errorf("failed to encode %v: %w", s.path, err)
 	}
+
+	if err := vlansFileTmp.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	if err := os.Rename(vlansFileTmp.Name(), s.path); err != nil {
+		return fmt.Errorf("failed to replace %v: %w", s.path, err)
+	}
+
 	return nil
 }

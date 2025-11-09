@@ -36,6 +36,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -43,3 +44,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Update k8s deployment with the new image
+        run: |
+          DIGEST=${{ steps.build.outputs.digest }}
+          echo "Using image digest: $DIGEST"
+          sed -i "s|image: ghcr.io/maitmardin/net-admin-api.*|image: ghcr.io/maitmardin/net-admin-api@${DIGEST}|" k8s/deployment.yml

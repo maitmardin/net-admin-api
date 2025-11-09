@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: net-admin-api
-          image: ghcr.io/maitmardin/vlan-api:main
+          image: ghcr.io/maitmardin/net-admin-api:main
           ports:
             - containerPort: 8080
           env:

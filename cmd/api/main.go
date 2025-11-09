@@ -39,11 +39,12 @@ func main() {
 	shutdownDone := make(chan bool, 1)
 	go gracefulShutdown(server, shutdownDone)
 
+	log.Printf("Starting API server at %v", server.Addr)
+
 	err = server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatalf("API server error: %s", err)
 	}
-	log.Printf("Started API server at %v", server.Addr)
 
 	<-shutdownDone
 	log.Println("API server shutdown complete")

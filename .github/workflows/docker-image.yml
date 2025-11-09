@@ -3,7 +3,10 @@ name: Docker Image
 on:
   workflow_run:
     workflows: ["Build and Test"]
-    types: [completed]
+    types:
+      - completed
+    branches:
+      - main
 
 env:
   REGISTRY: ghcr.io

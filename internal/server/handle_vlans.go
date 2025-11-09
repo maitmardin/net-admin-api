@@ -8,16 +8,15 @@ import (
 	"net/http"
 	"strings"
 
-	"net-admin-api/internal/vlan"
-
 	"github.com/google/uuid"
+	"net-admin-api/internal/vlan"
 )
 
 func (s *Server) HandleListVLANs(respWriter http.ResponseWriter, req *http.Request) {
 	vlans, err := s.vlanStore.List()
 	if err != nil {
 		log.Printf("failed to read vlans: %v", err)
-		http.Error(respWriter, "failed to read vlans", http.StatusInternalServerError)
+		internalError(respWriter, "failed to read vlans")
 		return
 	}
 	writeJSONResponse(respWriter, vlans)
@@ -27,12 +26,12 @@ func (s *Server) HandleCreateVLAN(respWriter http.ResponseWriter, req *http.Requ
 	defer req.Body.Close()
 	vlan := &vlan.VLAN{}
 	if err := json.NewDecoder(req.Body).Decode(&vlan); err != nil {
-		http.Error(respWriter, fmt.Sprintf("failed to parse vlan: %v", err), http.StatusBadRequest)
+		invalidInput(respWriter, fmt.Sprintf("failed to parse vlan: %v", err))
 		return
 	}
 
 	if errors := vlan.Validate(); len(errors) > 0 {
-		http.Error(respWriter, strings.Join(errors, ", "), http.StatusBadRequest)
+		invalidInput(respWriter, strings.Join(errors, ", "))
 		return
 	}
 
@@ -40,7 +39,7 @@ func (s *Server) HandleCreateVLAN(respWriter http.ResponseWriter, req *http.Requ
 	vlan.ID = uuid.New()
 	if err := s.vlanStore.Save(*vlan); err != nil {
 		log.Printf("failed to save vlan: %v", err)
-		http.Error(respWriter, "failed to save vlan", http.StatusInternalServerError)
+		internalError(respWriter, "failed to save vlan")
 		return
 	}
 
@@ -51,7 +50,7 @@ func (s *Server) HandleCreateVLAN(respWriter http.ResponseWriter, req *http.Requ
 func (s *Server) HandleReadVLAN(respWriter http.ResponseWriter, req *http.Request) {
 	vlanID, err := uuid.Parse(req.PathValue("id"))
 	if err != nil {
-		http.Error(respWriter, "invalid vlan id", http.StatusBadRequest)
+		invalidInput(respWriter, "invalid vlan id")
 		return
 	}
 	vlan := s.vlanStore.Get(vlanID)
@@ -65,22 +64,22 @@ func (s *Server) HandleReadVLAN(respWriter http.ResponseWriter, req *http.Reques
 func (s *Server) HandleUpdateVLAN(respWriter http.ResponseWriter, req *http.Request) {
 	vlanID, err := uuid.Parse(req.PathValue("id"))
 	if err != nil {
-		http.Error(respWriter, "invalid vlan id", http.StatusBadRequest)
+		invalidInput(respWriter, "invalid vlan id")
 		return
 	}
 
 	defer req.Body.Close()
 	v := &vlan.VLAN{}
 	if err := json.NewDecoder(req.Body).Decode(&v); err != nil {
-		http.Error(respWriter, fmt.Sprintf("failed to parse vlan: %v", err), http.StatusBadRequest)
+		invalidInput(respWriter, fmt.Sprintf("failed to parse vlan: %v", err))
 		return
 	}
 	if vlanID != v.ID {
-		http.Error(respWriter, "mismatching vlan id in request body", http.StatusBadRequest)
+		invalidInput(respWriter, "mismatching vlan id in request body")
 		return
 	}
 	if errors := v.Validate(); len(errors) > 0 {
-		http.Error(respWriter, strings.Join(errors, ", "), http.StatusBadRequest)
+		invalidInput(respWriter, strings.Join(errors, ", "))
 		return
 	}
 
@@ -91,7 +90,7 @@ func (s *Server) HandleUpdateVLAN(respWriter http.ResponseWriter, req *http.Requ
 		}
 
 		log.Printf("failed to update vlan: %v", err)
-		http.Error(respWriter, "failed to update vlan", http.StatusInternalServerError)
+		internalError(respWriter, "failed to update vlan")
 		return
 	}
 }
@@ -99,7 +98,7 @@ func (s *Server) HandleUpdateVLAN(respWriter http.ResponseWriter, req *http.Requ
 func (s *Server) HandleDeleteVLAN(respWriter http.ResponseWriter, req *http.Request) {
 	vlanID, err := uuid.Parse(req.PathValue("id"))
 	if err != nil {
-		http.Error(respWriter, "invalid vlan id", http.StatusBadRequest)
+		invalidInput(respWriter, "invalid vlan id")
 		return
 	}
 
@@ -109,14 +108,7 @@ func (s *Server) HandleDeleteVLAN(respWriter http.ResponseWriter, req *http.Requ
 			return
 		}
 		log.Printf("failed to delete vlan: %v", err)
-		http.Error(respWriter, "failed to delete vlan", http.StatusInternalServerError)
+		internalError(respWriter, "failed to delete vlan")
 		return
-	}
-}
-
-func writeJSONResponse(respWriter http.ResponseWriter, v any) {
-	respWriter.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(respWriter).Encode(v); err != nil {
-		log.Printf("failed to write response: %v", err)
 	}
 }

@@ -23,11 +23,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/VLAN'
         '500':
-          description: Internal Server Error
-          content:
-            text/plain:
-              schema:
-                type: string
+          $ref: '#/components/responses/InternalServerError'
     post:
       summary: Create a new VLAN
       tags:
@@ -50,17 +46,9 @@ paths:
                 format: uri
           content: {}
         '400':
-          description: Invalid VLAN object in request body
-          content:
-            text/plain:
-              schema:
-                type: string
+          $ref: '#/components/responses/BadRequestError'
         '500':
-          description: Internal Server Error
-          content:
-            text/plain:
-              schema:
-                type: string
+          $ref: '#/components/responses/InternalServerError'
   /api/v1/vlans/{id}:
     get:
       summary: Get VLAN by ID
@@ -82,11 +70,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/VLAN'
         '400':
-          description: Invalid VLAN ID in request URL
-          content:
-            text/plain:
-              schema:
-                type: string
+          $ref: '#/components/responses/BadRequestError'
         '404':
           description: VLAN not found
     put:
@@ -113,19 +97,11 @@ paths:
           description: VLAN updated successfully
           content: {}
         '400':
-          description: Invalid VLAN ID in request URL or invalid VLAN object in request body
-          content:
-            text/plain:
-              schema:
-                type: string
+          $ref: '#/components/responses/BadRequestError'
         '404':
           description: VLAN not found
         '500':
-          description: Internal Server Error
-          content:
-            text/plain:
-              schema:
-                type: string
+          $ref: '#/components/responses/InternalServerError'
     delete:
       summary: Delete VLAN by ID
       tags:
@@ -143,19 +119,11 @@ paths:
           description: VLAN deleted successfully
           content: {}
         '400':
-          description: Invalid VLAN ID in request URL
-          content:
-            text/plain:
-              schema:
-                type: string
+          $ref: '#/components/responses/BadRequestError'
         '404':
           description: VLAN not found
         '500':
-          description: Internal Server Error
-          content:
-            text/plain:
-              schema:
-                type: string
+          $ref: '#/components/responses/InternalServerError'
   /health:
     get:
       summary: Health check endpoint
@@ -213,3 +181,28 @@ components:
               example: "550e8400-e29b-41d4-a716-446655440000"
           required:
             - id
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: "Machine-readable error code"
+        message:
+          type: string
+          description: "Human-readable description of the error"
+
+  responses:
+    BadRequestError:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

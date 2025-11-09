@@ -95,7 +95,7 @@ func TestHandleReadVLAN_NOK(t *testing.T) {
 	resp, err := server.Client().Get(server.URL + "/api/v1/vlans/invalid")
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	requireInvalidInputResponse(t, resp)
 
 	// Attempt a read with non-existent ID
 	resp, err = server.Client().Get(server.URL + "/api/v1/vlans/" + uuid.New().String())
@@ -114,28 +114,28 @@ func TestHandleCreateVLAN_NOK(t *testing.T) {
 	resp, err := server.Client().Post(server.URL + "/api/v1/vlans", "application/json", bytes.NewBuffer([]byte("invalid")))
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	requireInvalidInputResponse(t, resp)
 
 	// Create VLAN with invalid VID
 	vlan1 = newVLAN(t, 5000, "test1", "192.168.0.0/24", "192.168.0.1")
 	resp, err = server.Client().Post(server.URL + "/api/v1/vlans", "application/json", encodeVLAN(t, vlan1))
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	requireInvalidInputResponse(t, resp)
 
 	// Create VLAN with empty name
 	vlan1 = newVLAN(t, 1, "", "192.168.0.0/24", "192.168.0.1")
 	resp, err = server.Client().Post(server.URL + "/api/v1/vlans", "application/json", encodeVLAN(t, vlan1))
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	requireInvalidInputResponse(t, resp)
 
 	// Create VLAN with gateway not belonging to subnet
 	vlan1 = newVLAN(t, 1, "test1", "192.168.0.0/24", "192.168.1.1")
 	resp, err = server.Client().Post(server.URL + "/api/v1/vlans", "application/json", encodeVLAN(t, vlan1))
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	requireInvalidInputResponse(t, resp)
 }
 
 func TestHandleUpdateVLAN_NOK(t *testing.T) {
@@ -155,7 +155,7 @@ func TestHandleUpdateVLAN_NOK(t *testing.T) {
 	resp, err := server.Client().Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	requireInvalidInputResponse(t, resp)
 
 	// Update non-existent VLAN
 	req, err = http.NewRequest("PUT", server.URL + "/api/v1/vlans/" + vlan2.ID.String(), encodeVLAN(t, vlan2))
@@ -173,7 +173,7 @@ func TestHandleUpdateVLAN_NOK(t *testing.T) {
 	resp, err = server.Client().Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	requireInvalidInputResponse(t, resp)
 
 	// Update with invalid JSON
 	req, err = http.NewRequest("PUT", server.URL + "/api/v1/vlans/" + vlan1.ID.String(), bytes.NewBuffer([]byte("invalid")))
@@ -182,7 +182,7 @@ func TestHandleUpdateVLAN_NOK(t *testing.T) {
 	resp, err = server.Client().Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	requireInvalidInputResponse(t, resp)
 
 	// Update with an invalid VID
 	vlan1.VID = 9999
@@ -192,7 +192,7 @@ func TestHandleUpdateVLAN_NOK(t *testing.T) {
 	resp, err = server.Client().Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	requireInvalidInputResponse(t, resp)
 }
 
 func TestHandleDeleteVLAN_NOK(t *testing.T) {
@@ -210,7 +210,7 @@ func TestHandleDeleteVLAN_NOK(t *testing.T) {
 	resp, err := server.Client().Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	requireInvalidInputResponse(t, resp)
 
 	// Delete non-existent VLAN
 	req, err = http.NewRequest("DELETE", server.URL + "/api/v1/vlans/" + vlan1.ID.String(), nil)
@@ -337,4 +337,14 @@ func newVLAN(t *testing.T, vid uint16, name, subnetStr, gatewayStr string) *vlan
 		Gateway: gateway,
 		Status:  "enabled",
 	}
+}
+
+func requireInvalidInputResponse(t *testing.T, resp *http.Response) {
+	t.Helper()
+	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	require.Equal(t, resp.Header.Get("Content-Type"), "application/json")
+
+	errResp := ErrorResponse{}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&errResp))
+	require.Equal(t, errResp.Code, ErrCodeInvalidInput)
 }

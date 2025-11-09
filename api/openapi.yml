@@ -1,0 +1,215 @@
+openapi: 3.0.4
+info:
+  title: Network Administration API
+  version: 1.0.0
+  description: RESTful API for managing VLANs
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /api/v1/vlans:
+    get:
+      summary: List all VLANs
+      tags:
+        - VLANs
+      responses:
+        '200':
+          description: List of VLANs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VLAN'
+        '500':
+          description: Internal Server Error
+          content:
+            text/plain:
+              schema:
+                type: string
+    post:
+      summary: Create a new VLAN
+      tags:
+        - VLANs
+      requestBody:
+        description: VLAN object to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VLANCreate'
+      responses:
+        '201':
+          description: VLAN created successfully. Location header contains relative URL of the new VLAN.
+          headers:
+            Location:
+              description: Relative URL of the newly created VLAN
+              schema:
+                type: string
+                format: uri
+          content: {}
+        '400':
+          description: Invalid VLAN object in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal Server Error
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/v1/vlans/{id}:
+    get:
+      summary: Get VLAN by ID
+      tags:
+        - VLANs
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: VLAN ID
+      responses:
+        '200':
+          description: VLAN details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VLAN'
+        '400':
+          description: Invalid VLAN ID in request URL
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: VLAN not found
+    put:
+      summary: Update VLAN by ID
+      tags:
+        - VLANs
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: VLAN ID
+      requestBody:
+        description: Updated VLAN object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VLAN'
+      responses:
+        '200':
+          description: VLAN updated successfully
+          content: {}
+        '400':
+          description: Invalid VLAN ID in request URL or invalid VLAN object in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: VLAN not found
+        '500':
+          description: Internal Server Error
+          content:
+            text/plain:
+              schema:
+                type: string
+    delete:
+      summary: Delete VLAN by ID
+      tags:
+        - VLANs
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: VLAN ID
+      responses:
+        '200':
+          description: VLAN deleted successfully
+          content: {}
+        '400':
+          description: Invalid VLAN ID in request URL
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: VLAN not found
+        '500':
+          description: Internal Server Error
+          content:
+            text/plain:
+              schema:
+                type: string
+  /health:
+    get:
+      summary: Health check endpoint
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Application is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+
+components:
+  schemas:
+    VLANCreate:
+      type: object
+      properties:
+        vid:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 4094
+          example: 10
+        name:
+          type: string
+          example: "vlan10"
+        subnet:
+          type: string
+          format: cidr
+          example: "192.168.10.0/24"
+        gateway:
+          type: string
+          format: ipv4
+          example: "192.168.10.1"
+        status:
+          type: string
+          example: "active"
+      required:
+        - vid
+        - name
+        - subnet
+        - gateway
+        - status
+
+    VLAN:
+      allOf:
+        - $ref: '#/components/schemas/VLANCreate'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "550e8400-e29b-41d4-a716-446655440000"
+          required:
+            - id

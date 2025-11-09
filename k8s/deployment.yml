@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: net-admin-api-deployment
+  labels:
+    app: net-admin-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: net-admin-api
+  template:
+    metadata:
+      labels:
+        app: net-admin-api
+    spec:
+      containers:
+        - name: net-admin-api
+          image: ghcr.io/maitmardin/vlan-api:main
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5

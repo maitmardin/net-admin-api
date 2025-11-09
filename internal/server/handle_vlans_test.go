@@ -122,6 +122,20 @@ func TestHandleCreateVLAN_NOK(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+
+	// Create VLAN with empty name
+	vlan1 = newVLAN(t, 1, "", "192.168.0.0/24", "192.168.0.1")
+	resp, err = server.Client().Post(server.URL + "/api/v1/vlans", "application/json", encodeVLAN(t, vlan1))
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
+
+	// Create VLAN with gateway not belonging to subnet
+	vlan1 = newVLAN(t, 1, "test1", "192.168.0.0/24", "192.168.1.1")
+	resp, err = server.Client().Post(server.URL + "/api/v1/vlans", "application/json", encodeVLAN(t, vlan1))
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, resp.StatusCode, http.StatusBadRequest)
 }
 
 func TestHandleUpdateVLAN_NOK(t *testing.T) {

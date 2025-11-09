@@ -49,8 +49,16 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Update k8s deployment with the new image
+      - name: Prepare k8s manifest with new image (no apply)
         run: |
-          DIGEST=${{ steps.build.outputs.digest }}
-          echo "Using image digest: $DIGEST"
-          sed -i "s|image: ghcr.io/maitmardin/net-admin-api.*|image: ghcr.io/maitmardin/net-admin-api@${DIGEST}|" k8s/deployment.yml
+          DIGEST='${{ steps.build.outputs.digest }}'
+          yq -i '.spec.template.spec.containers[0].image = "ghcr.io/${{ env.IMAGE_NAME }}@"+env(DIGEST)' k8s/deployment.yml
+
+      - name: Dry-run deploy (kubectl diff)
+        if: env.KUBECONFIG_B64 != ''
+        env:
+          KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
+        run: |
+          echo "$KUBECONFIG_B64" | base64 -d > kubeconfig
+          export KUBECONFIG=$PWD/kubeconfig
+          kubectl diff -f k8s/

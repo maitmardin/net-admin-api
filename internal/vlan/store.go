@@ -97,6 +97,7 @@ func (s *Store) readVLANs() error {
 	if err != nil {
 		return fmt.Errorf("failed to open %v: %w", s.path, err)
 	}
+	defer vlansFile.Close()
 
 	vlans := []VLAN{}
 	if err := json.NewDecoder(vlansFile).Decode(&vlans); err != nil {

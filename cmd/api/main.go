@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"net-admin/internal/server"
+	"net-admin-api/internal/server"
 )
 
 const DEFAULT_PORT            = 8080

@@ -1,4 +1,4 @@
-module net-admin
+module net-admin-api
 
 go 1.25.3
 

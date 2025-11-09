@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	"net-admin/internal/vlan"
+	"net-admin-api/internal/vlan"
 )
 
 func TestHandlers_OK(t *testing.T) {

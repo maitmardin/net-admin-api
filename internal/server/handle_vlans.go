@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"net-admin/internal/vlan"
+	"net-admin-api/internal/vlan"
 
 	"github.com/google/uuid"
 )

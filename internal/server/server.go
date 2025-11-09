@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"net-admin/internal/vlan"
+	"net-admin-api/internal/vlan"
 )
 
 // Network Administration API server.
